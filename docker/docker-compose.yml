@@ -1,0 +1,119 @@
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: energy_postgres
+    environment:
+      POSTGRES_USER: energyuser
+      POSTGRES_PASSWORD: energypass
+      POSTGRES_DB: energydb
+    command: >
+      postgres
+      -c wal_level=logical
+      -c max_replication_slots=5
+      -c max_wal_senders=5
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - energy_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U energyuser -d energydb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: energy_zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - energy_network
+    healthcheck:
+      test: ["CMD", "bash", "-c", "echo ruok | timeout 2 bash -c 'cat > /dev/tcp/localhost/2181' && echo ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: energy_kafka
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    ports:
+      - "29092:29092"
+    networks:
+      - energy_network
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+
+
+  kafka-connect:
+    image: energy-kafka-connect:1.0
+    container_name: energy_kafka_connect
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: energy-connect-group
+      CONNECT_TOPIC_CREATION_ENABLE: 'false'
+      CONFIG_STORAGE_TOPIC: energy_connect_configs
+      OFFSET_STORAGE_TOPIC: energy_connect_offsets
+      STATUS_STORAGE_TOPIC: energy_connect_status
+      CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      STATUS_STORAGE_REPLICATION_FACTOR: 1
+    ports:
+      - "8083:8083"
+    networks:
+      - energy_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8083/connectors || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: energy_kafka_ui
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_CLUSTERS_0_NAME: energy-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: debezium
+      KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://kafka-connect:8083
+    ports:
+      - "8080:8080"
+    networks:
+      - energy_network
+
+volumes:
+  postgres_data:
+  kafka_data:
+
+networks:
+  energy_network:
+    driver: bridge
