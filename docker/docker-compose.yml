@@ -110,6 +110,20 @@ services:
     networks:
       - energy_network
 
+  mirrormaker2:
+    image: confluentinc/cp-kafka:7.5.0
+    container_name: energy_mirrormaker2
+    depends_on:
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./mirrormaker2/mm2.properties:/etc/kafka/mm2.properties
+      - ./mirrormaker2/run-mm2.sh:/run-mm2.sh
+    entrypoint: /run-mm2.sh
+    networks:
+      - energy_network
+    restart: on-failure
+
 volumes:
   postgres_data:
   kafka_data:
@@ -117,3 +131,4 @@ volumes:
 networks:
   energy_network:
     driver: bridge
+
