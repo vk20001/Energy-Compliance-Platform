@@ -2,7 +2,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import current_timestamp
 
 REDPANDA_BOOTSTRAP = "d6sinugbmgg6innos300.any.eu-central-1.mpx.prd.cloud.redpanda.com:9092"
-REDPANDA_TOPIC = "energy.public.meter_readings"
+REDPANDA_TOPIC = "cisaf.meter_readings"
 BRONZE_PATH = "/home/vaishu19/energy-compliance-platform/datalake/bronze/meter_readings"
 CHECKPOINT_PATH = "/home/vaishu19/energy-compliance-platform/spark/checkpoints/bronze_meter_readings"
 

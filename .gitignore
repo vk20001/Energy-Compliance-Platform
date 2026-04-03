@@ -1,0 +1,12 @@
+venv/
+logs/
+exports/
+spark-warehouse/
+__pycache__/
+*.pyc
+*.egg-info/
+.env
+*.log
+*.parquet
+*.delta
+.ipynb_checkpoints/

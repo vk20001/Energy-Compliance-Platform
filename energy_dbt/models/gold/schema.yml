@@ -1,0 +1,45 @@
+version: 2
+
+models:
+  - name: fct_monthly_consumption
+    description: "Monthly electricity consumption aggregated per facility"
+    columns:
+      - name: facility_id
+        tests:
+          - not_null
+      - name: consumption_month
+        tests:
+          - not_null
+      - name: total_kwh
+        tests:
+          - not_null
+
+  - name: fct_subsidy_entitlement
+    description: "CISAF subsidy entitlement calculated per facility per month"
+    columns:
+      - name: facility_id
+        tests:
+          - not_null
+      - name: subsidy_entitlement_eur
+        tests:
+          - not_null
+
+  - name: fct_investment_compliance
+    description: "Investment compliance tracking against CISAF reinvestment obligation"
+    columns:
+      - name: facility_id
+        tests:
+          - not_null
+          - unique
+      - name: compliance_status
+        tests:
+          - accepted_values:
+              values: ['COMPLIANT', 'ON_TRACK', 'AT_RISK']
+
+  - name: facility_compliance_summary
+    description: "Single row per facility compliance overview"
+    columns:
+      - name: facility_id
+        tests:
+          - not_null
+          - unique

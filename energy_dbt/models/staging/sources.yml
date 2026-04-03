@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: energy_compliance
+    catalog: workspace
+    schema: energy_compliance
+    tables:
+      - name: silver_meter_readings
+        description: "SCD Type 2 meter readings with correction history"
+      - name: silver_investments
+        description: "SCD Type 2 investments with status change history"
+      - name: dim_facilities
+        description: "Facility dimension table"
+      - name: smard_wholesale_prices
+        description: "Real SMARD wholesale electricity prices (EUR/MWh and EUR/kWh)"
