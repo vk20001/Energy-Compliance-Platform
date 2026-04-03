@@ -123,12 +123,18 @@ Airflow 3.1.8, standalone mode (not Docker), `AIRFLOW_HOME=~/energy-compliance-p
 
 Both DAGs ran green.
 
-**Compliance check output (from Airflow task log):**
+**Compliance check output (from Airflow task log, 2026-03-24):**
 
-| Facility | Status |
-|---|---|
-| Zementwerk Leipzig | AT_RISK (0% compliance) |
-| 7 remaining facilities | COMPLIANT |
+| Facility | Status | Subsidy (EUR) | Compliance % |
+|---|---|---|---|
+| Zementwerk Leipzig | AT_RISK | 0.00 | 0.0% |
+| Raffinerie Hamburg | COMPLIANT | 15,069,587.63 | 1311.6% |
+| Chemiepark Ludwigshafen | COMPLIANT | 8,413,185.28 | 2158.9% |
+| Aluminiumwerk Neuss | COMPLIANT | 5,421,172.63 | 2693.3% |
+| Stahlwerk Mannheim | COMPLIANT | 5,724,552.72 | 3395.2% |
+| Kupferhütte Hamburg | COMPLIANT | 3,909,197.05 | 4554.0% |
+| Papierfabrik Augsburg | COMPLIANT | 1,925,472.62 | 6278.5% |
+| Glaswerk Würzburg | COMPLIANT | 2,107,515.93 | 10058.5% |
 
 **Airflow 3.x breaking changes encountered:**
 - `airflow users` CLI command removed. User creation uses `airflow db` or the web UI.
@@ -352,3 +358,55 @@ Debezium · Redpanda Cloud · kafka-python · PySpark · Delta Lake · dbt · Ai
 ---
 
 *All metrics in this README are from actual run output. No invented numbers.*
+
+## Screenshots
+
+### Phase 1 — CDC Pipeline
+
+**Docker containers running (all 5 healthy)**
+![Docker containers](screenshots/phase1_docker_containers_running.png)
+
+**Debezium connector status: RUNNING**
+![Debezium connector running](screenshots/phase1_debezium_connector_running.png)
+
+**Debezium connector plugins loaded (PostgresConnector 3.0.8.Final)**
+![Debezium plugins](screenshots/phase1_debezium_connector_plugins.png)
+
+**Redpanda Cloud — cisaf.meter_readings topic with messages**
+![Redpanda topic](screenshots/phase1_redpanda_cisaf_meter_readings_topic.png)
+
+---
+
+### Phase 3 — Gold Layer (dbt + Databricks)
+
+**dbt lineage graph — 4 staging views → 4 gold tables**
+![dbt lineage graph](screenshots/phase3_dbt_lineage_graph.png)
+
+**Databricks catalog — workspace.energy_compliance schema and tables**
+![Databricks catalog](screenshots/phase3_databricks_catalog_energy_compliance.png)
+
+**fct_subsidy_entitlement query results on Databricks**
+![fct_subsidy_entitlement](screenshots/phase3_databricks_fct_subsidy_entitlement.png)
+
+---
+
+### Phase 4 — Airflow Orchestration
+
+**Both DAGs active in Airflow UI**
+![Airflow DAGs](screenshots/phase4_airflow_dags_overview.png)
+
+**compliance_check task log — per-facility compliance output**
+![Airflow compliance task log](screenshots/phase4_airflow_compliance_check_task_log.png)
+
+---
+
+### Phase 5 — RAG Layer
+
+**Query 1: What qualifies as a demand flexibility investment under CISAF?**
+![RAG query 1](screenshots/phase5_rag_query1_demand_flexibility.png)
+
+**Query 2: What is the reinvestment deadline and consequences of non-compliance?**
+![RAG query 2](screenshots/phase5_rag_query2_reinvestment_deadline.png)
+
+**Query 3: Which facilities are at risk? (live Databricks data + RAG context)**
+![RAG query 3](screenshots/phase5_rag_query3_facility_risk_live_data.png)
